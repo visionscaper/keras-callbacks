@@ -12,6 +12,9 @@ class BatchPerformanceLoggerBase(Base, Callback):
     _predict_model(batch_data)
     _calc_performance(batch_data)
 
+    # Only if you want to inspect results during training
+    _inspect_data( generated_batch_data, predicted_batch_data, batch_metrics_data)
+
     """
     def __init__(self,
                  batch_generator,
@@ -59,6 +62,7 @@ class BatchPerformanceLoggerBase(Base, Callback):
     def _calc_performance(self, generated_batch_data, predicted_batch_data):
         self._log.error("Please implement this method")
 
+    # TODO : FS : Factor out in to a inspection callback
     def _inspect_data(self, generated_batch_data, predicted_batch_data, batch_metrics_data):
         self._log.error("Please implement this method")
 
