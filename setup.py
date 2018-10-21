@@ -6,8 +6,7 @@ setup(
     packages=['keras_callbacks'],
     license='MIT license',
     long_description=open('README.md').read(),
+    dependency_links=['git+https://github.com/visionscaper/pybase.git'],
     install_requires=[
-        'keras>=2.1.6',
-        'git+https://github.com/visionscaper/pybase.git'
-    ],
-)
+        'keras>=2.1.6'
+    ])

@@ -7,13 +7,30 @@ import basics.validation_utils as _u
 
 
 class TensorBoard(Base, KerasTensorBoard):
-    def __init__(self, metric_mapping=None, init_iter=-1, **kwargs):
+    def __init__(self, metric_mapping=None, init_iter=-1, batch_level=True, **kwargs):
         super().__init__(**kwargs)
         self._metric_mapping = metric_mapping
         self._iter = init_iter
 
+        self._batch_level = batch_level
+
     def on_batch_end(self, batch, logs=None):
-        self._iter += 1
+        if self._batch_level:
+            self._iter += 1
+            self._write_logs(self._iter, logs)
+
+        return super().on_batch_end(batch, logs)
+
+    def on_epoch_end(self, epoch, logs=None):
+        if not self._batch_level:
+            self._write_logs(epoch, logs)
+
+            # Set logs to None such that no new data is written
+            logs = None
+
+        return super().on_epoch_end(epoch, logs)
+
+    def _write_logs(self, iter, logs):
         for name, value in logs.items():
             if name in ['batch', 'size']:
                 continue
@@ -33,7 +50,7 @@ class TensorBoard(Base, KerasTensorBoard):
             summary_value.simple_value = value.item()
 
             summary_value.tag = log_metric_name
-            self.writer.add_summary(summary, self._iter)
+            self.writer.add_summary(summary, iter)
         self.writer.flush()
 
-        super().on_batch_end(batch, logs)
+
