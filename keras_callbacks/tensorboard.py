@@ -17,20 +17,20 @@ class TensorBoard(Base, KerasTensorBoard):
     def on_batch_end(self, batch, logs=None):
         if self._batch_level:
             self._iter += 1
-            self._write_logs(self._iter, logs)
+            self._write_mapped_logs(self._iter, logs)
 
         return super().on_batch_end(batch, logs)
 
     def on_epoch_end(self, epoch, logs=None):
         if not self._batch_level:
-            self._write_logs(epoch, logs)
+            self._write_mapped_logs(epoch, logs)
 
             # Set logs to None such that no new data is written
             logs = None
 
         return super().on_epoch_end(epoch, logs)
 
-    def _write_logs(self, iter, logs):
+    def _write_mapped_logs(self, iter, logs):
         for name, value in logs.items():
             if name in ['batch', 'size']:
                 continue
