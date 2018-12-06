@@ -89,8 +89,9 @@ class ModelCheckpointManager(Base, Callback):
         if self._iter == 0:
             return
 
+        checkpoint_fname = None
         if (self._create_checkpoint_every > 0) and (self._iter % self._create_checkpoint_every == 0):
-            self._save_checkpoint()
+            checkpoint_fname = self._save_checkpoint()
 
         if (self._archive_last_checkpoint_every > 0) and (self._iter % self._archive_last_checkpoint_every == 0):
             self._copy(self.latest_model_file_name(), self.current_model_file_name())
@@ -113,7 +114,7 @@ class ModelCheckpointManager(Base, Callback):
                                                                             self._metric_to_monitor,
                                                                             model_quality))
 
-            model_fname = self._save_current_model_as_temp()
+            model_fname = self._save_current_model_as_temp(checkpoint_fname)
             if model_fname:
                 self._best_model = model_fname
                 self._best_model_quality = model_quality
@@ -333,8 +334,12 @@ class ModelCheckpointManager(Base, Callback):
 
             if not self._simulation_mode:
                 self._model.save_weights(fname)
+
+            return fname
         except Exception as e:
             _.log_exception(self._log, "Unable to save current model", e)
+
+        return None
 
     def _copy(self, source_fname, dest_fname):
         success = True
@@ -351,18 +356,33 @@ class ModelCheckpointManager(Base, Callback):
 
         return success
 
-    def _save_current_model_as_temp(self):
+    def _save_current_model_as_temp(self, checkpoint_fname):
         try:
             fname = tempfile.mkstemp(dir=self._temp_model_path)
             fname = fname[1]
-            if self._simulation_mode or self._debug_mode:
-                self._log.debug("Saving model weights to temp. file [%s]" % fname)
 
-            if not self._simulation_mode:
-                self._model.save_weights(fname)
-            return fname
+            if checkpoint_fname is None:
+                if self._simulation_mode or self._debug_mode:
+                    self._log.debug("Saving current model weights to temp. file [%s]" % fname)
+
+                if not self._simulation_mode:
+                    self._model.save_weights(fname)
+
+                return fname
+            else:
+                if self._simulation_mode or self._debug_mode:
+                    self._log.debug("Saving current model to temp. file: "
+                                    "Copying model checkpoint [%s] to temp. file [%s]" % (checkpoint_fname, fname))
+
+                if not self._simulation_mode:
+                    if self._copy(checkpoint_fname, fname):
+                        # Success
+                        return fname
+                    else:
+                        return None
+
         except Exception as e:
-            _.log_exception(self._log, "Unable to save current model", e)
+            _.log_exception(self._log, "Unable to save or copy current model as temp. model", e)
             return None
 
     def _remove_model(self, model_fname):
