@@ -2,8 +2,8 @@ import json
 import numpy as np
 from keras import backend as K
 from keras_callbacks.batch_performance_logger_base import BatchPerformanceLoggerBase
-from keras.losses import categorical_crossentropy
-from keras.metrics import categorical_accuracy
+from keras.losses import categorical_crossentropy, sparse_categorical_crossentropy
+from keras.metrics import categorical_accuracy, sparse_categorical_accuracy
 from keras.engine.training_utils import weighted_masked_objective
 
 import basics.base_utils as _
@@ -19,21 +19,30 @@ class DefaultBatchPerformanceLogger(BatchPerformanceLoggerBase):
                  metrics_name_postfix="unknown",
                  inspector=None,
                  num_samples_to_inspect=5,
+                 one_hot_encoding=True,
                  **kwargs):
         super().__init__(batch_generator, metrics_name_postfix, **kwargs)
 
         self._sess = session
 
-        self._target_batch_placeholder = K.placeholder((None, max_seq_length+2, num_symbols))
+        self._one_hot_encoding = one_hot_encoding
+
+        if self._one_hot_encoding:
+            self._target_batch_placeholder = K.placeholder((None, max_seq_length + 2, num_symbols))
+        else:
+            self._target_batch_placeholder = K.placeholder((None, max_seq_length + 2, 1))
+
         self._output_batch_placeholder = K.placeholder((None, max_seq_length+2, num_symbols))
         self._sample_weights_batch_placeholder = K.placeholder((None, max_seq_length+2))
 
-        self._weighted_categorical_cross_entropy_op = weighted_masked_objective(categorical_crossentropy)(
+        loss = categorical_crossentropy if self._one_hot_encoding else sparse_categorical_crossentropy
+        self._weighted_categorical_cross_entropy_op = weighted_masked_objective(loss)(
             self._target_batch_placeholder,
             self._output_batch_placeholder,
             self._sample_weights_batch_placeholder)
 
-        self._weighted_categorical_accuracy_op = weighted_masked_objective(categorical_accuracy)(
+        metric = categorical_accuracy if self._one_hot_encoding else sparse_categorical_accuracy
+        self._weighted_categorical_accuracy_op = weighted_masked_objective(metric)(
             self._target_batch_placeholder,
             self._output_batch_placeholder,
             self._sample_weights_batch_placeholder)
