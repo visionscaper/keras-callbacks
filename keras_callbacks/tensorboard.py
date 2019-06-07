@@ -1,5 +1,5 @@
 import tensorflow as tf
-from keras.callbacks import TensorBoard as KerasTensorBoard
+from tensorflow.keras.callbacks import TensorBoard as KerasTensorBoard
 
 from basics.base import Base
 
