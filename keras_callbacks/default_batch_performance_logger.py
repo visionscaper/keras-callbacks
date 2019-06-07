@@ -3,7 +3,9 @@ from tensorflow.keras import backend as K
 from keras_callbacks.batch_performance_logger_base import BatchPerformanceLoggerBase
 from tensorflow.keras.losses import categorical_crossentropy, sparse_categorical_crossentropy
 from tensorflow.keras.metrics import categorical_accuracy, sparse_categorical_accuracy
-from tensorflow.python.keras.engine.training_utils import weighted_masked_objective
+
+# From 1.14.0-rc0 : weighted_masked_objective not available anymore, was replaced by call_metric_function
+from tensorflow.python.keras.engine.training_utils import call_metric_function
 
 import basics.base_utils as _
 
@@ -35,16 +37,16 @@ class DefaultBatchPerformanceLogger(BatchPerformanceLoggerBase):
         self._sample_weights_batch_placeholder = K.placeholder((None, max_seq_length+2))
 
         loss = categorical_crossentropy if self._one_hot_encoding else sparse_categorical_crossentropy
-        self._weighted_categorical_cross_entropy_op = weighted_masked_objective(loss)(
-            self._target_batch_placeholder,
-            self._output_batch_placeholder,
-            self._sample_weights_batch_placeholder)
+        self._weighted_categorical_cross_entropy_op = call_metric_function(loss,
+                                                                           self._target_batch_placeholder,
+                                                                           self._output_batch_placeholder,
+                                                                           self._sample_weights_batch_placeholder)
 
         metric = categorical_accuracy if self._one_hot_encoding else sparse_categorical_accuracy
-        self._weighted_categorical_accuracy_op = weighted_masked_objective(metric)(
-            self._target_batch_placeholder,
-            self._output_batch_placeholder,
-            self._sample_weights_batch_placeholder)
+        self._weighted_categorical_accuracy_op = call_metric_function(metric,
+                                                                      self._target_batch_placeholder,
+                                                                      self._output_batch_placeholder,
+                                                                      self._sample_weights_batch_placeholder)
 
         self._inspector = inspector
         self._num_samples_to_inspect = num_samples_to_inspect
