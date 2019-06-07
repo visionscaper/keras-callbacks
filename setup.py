@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='keras_callbacks',
-    version='0.2',
+    version='0.3',
     packages=['keras_callbacks'],
     license='MIT license',
     long_description=open('README.md').read(),

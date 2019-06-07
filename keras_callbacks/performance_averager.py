@@ -1,13 +1,12 @@
 import numpy as np
 import math
 
-from keras.callbacks import Callback
+from tensorflow.keras.callbacks import Callback
 
 from basics.base import Base
-
-from utils.sliding_window import SlidingWindow
-
 import basics.base_utils as _
+
+from keras_callbacks.utils.sliding_window import SlidingWindow
 
 
 class PerformanceAverager(Base, Callback):
